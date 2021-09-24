@@ -168,9 +168,9 @@ int main()
     // Выставите все аргументы в кернеле через clSetKernelArg (as_gpu, bs_gpu, cs_gpu и число значений, убедитесь, что тип количества элементов такой же в кернеле)
     {
         unsigned int i = 0;
-        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(float*), &as_gpu));
-        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(float*), &bs_gpu));
-        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(float*), &cs_gpu));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(cl_mem), &as_gpu));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(cl_mem), &bs_gpu));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(cl_mem), &cs_gpu));
         OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(unsigned int), &n));
     }
 
