@@ -168,10 +168,10 @@ int main()
     // Выставите все аргументы в кернеле через clSetKernelArg (as_gpu, bs_gpu, cs_gpu и число значений, убедитесь, что тип количества элементов такой же в кернеле)
     {
         unsigned int i = 0;
-        clSetKernelArg(kernel, i++, sizeof(float*), &as_gpu);
-        clSetKernelArg(kernel, i++, sizeof(float*), &bs_gpu);
-        clSetKernelArg(kernel, i++, sizeof(float*), &cs_gpu);
-        clSetKernelArg(kernel, i++, sizeof(unsigned int), &n);
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(float*), &as_gpu));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(float*), &bs_gpu));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(float*), &cs_gpu));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(unsigned int), &n));
     }
 
     // Выше увеличьте n с 1000*1000 до 100*1000*1000 (чтобы дальнейшие замеры были ближе к реальности)
@@ -191,6 +191,7 @@ int main()
             cl_event event;
             OCL_SAFE_CALL(clEnqueueNDRangeKernel(command_queue, kernel, 1, nullptr, &global_work_size, &workGroupSize, 0, nullptr, &event));
             OCL_SAFE_CALL(clWaitForEvents(1, &event));
+            OCL_SAFE_CALL(clReleaseEvent(event));
             t.nextLap(); // При вызове nextLap секундомер запоминает текущий замер (текущий круг) и начинает замерять время следующего круга
         }
         // Среднее время круга (вычисления кернела) на самом деле считается не по всем замерам, а лишь с 20%-перцентайля по 80%-перцентайль (как и стандартное отклонение)
@@ -234,14 +235,14 @@ int main()
             throw std::runtime_error("CPU and GPU results differ!");
         }
     }
-    clReleaseKernel(kernel);
-    clReleaseProgram(program);
+    OCL_SAFE_CALL(clReleaseKernel(kernel));
+    OCL_SAFE_CALL(clReleaseProgram(program));
 
-    clReleaseMemObject(as_gpu);
-    clReleaseMemObject(bs_gpu);
-    clReleaseMemObject(cs_gpu);
+    OCL_SAFE_CALL(clReleaseMemObject(as_gpu));
+    OCL_SAFE_CALL(clReleaseMemObject(bs_gpu));
+    OCL_SAFE_CALL(clReleaseMemObject(cs_gpu));
 
-    clReleaseCommandQueue(command_queue);
-    clReleaseContext(ctx);
+    OCL_SAFE_CALL(clReleaseCommandQueue(command_queue));
+    OCL_SAFE_CALL(clReleaseContext(ctx));
     return 0;
 }
