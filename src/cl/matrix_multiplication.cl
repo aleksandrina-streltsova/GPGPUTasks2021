@@ -39,6 +39,7 @@ __kernel void matrix_multiplication(__global const float *as,
         for (int l = 0; l < GROUP_SIZE; ++l) {
             sum += local_as[local_j][(local_j + local_i + l) & 0xf] * local_bs[(l + local_i) & 0xf][local_i];
         }
+        barrier(CLK_LOCAL_MEM_FENCE);
     }
 
     if (j < M && i < N) {
