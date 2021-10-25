@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <vector>
 
+#define WORK_GROUP_SIZE 256u
 
 template<typename T>
 void raiseFail(const T &a, const T &b, std::string message, std::string filename, int line) {
@@ -50,23 +51,35 @@ int main(int argc, char **argv) {
         std::cout << "CPU: " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
         std::cout << "CPU: " << (n / 1000 / 1000) / t.lapAvg() << " millions/s" << std::endl;
     }
-    /*
     gpu::gpu_mem_32f as_gpu;
-    as_gpu.resizeN(n);
+    unsigned int n_gpu = 1;
+    for(; n_gpu < std::max(n, 2 * WORK_GROUP_SIZE); n_gpu *= 2);
+    std::vector<float> as_max(n_gpu, std::numeric_limits<float>::max());
+    as_gpu.resizeN(n_gpu);
+    as_gpu.writeN(as_max.data(), n_gpu);
 
     {
         ocl::Kernel bitonic(bitonic_kernel, bitonic_kernel_length, "bitonic");
         bitonic.compile();
+        ocl::Kernel bitonic_start(bitonic_kernel, bitonic_kernel_length, "bitonic_start");
+        bitonic_start.compile();
+        ocl::Kernel bitonic_end(bitonic_kernel, bitonic_kernel_length, "bitonic_end");
+        bitonic_end.compile();
 
         timer t;
         for (int iter = 0; iter < benchmarkingIters; ++iter) {
             as_gpu.writeN(as.data(), n);
 
             t.restart();// Запускаем секундомер после прогрузки данных, чтобы замерять время работы кернела, а не трансфер данных
-
-            unsigned int workGroupSize = 128;
-            unsigned int global_work_size = (n + workGroupSize - 1) / workGroupSize * workGroupSize;
-            bitonic.exec(gpu::WorkSize(workGroupSize, global_work_size), as_gpu, n);
+            unsigned int workGroupSize = WORK_GROUP_SIZE;
+            unsigned int global_work_size = (n_gpu / 2 + workGroupSize - 1) / workGroupSize * workGroupSize;
+            bitonic_start.exec(gpu::WorkSize(workGroupSize, global_work_size), as_gpu);
+            for (unsigned int seq_length = 4 * WORK_GROUP_SIZE; seq_length / 2 < n; seq_length *= 2) {
+                for (unsigned int l = seq_length / 2; l > WORK_GROUP_SIZE; l /= 2) {
+                    bitonic.exec(gpu::WorkSize(workGroupSize, global_work_size), as_gpu, seq_length, l);
+                }
+                bitonic_end.exec(gpu::WorkSize(workGroupSize, global_work_size), as_gpu, seq_length);
+            }
             t.nextLap();
         }
         std::cout << "GPU: " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
@@ -79,6 +92,5 @@ int main(int argc, char **argv) {
     for (int i = 0; i < n; ++i) {
         EXPECT_THE_SAME(as[i], cpu_sorted[i], "GPU results should be equal to CPU results!");
     }
-*/
     return 0;
 }
