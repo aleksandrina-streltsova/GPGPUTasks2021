@@ -28,7 +28,7 @@ __kernel void count(__global const unsigned int *as,
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    if (local_id <= N_VALUES) {
+    if (local_id < N_VALUES) {
         for (int i = 1; i < WORK_GROUP_SIZE; ++i) {
             local_count_table[0][local_id] += local_count_table[i][local_id];
         }
