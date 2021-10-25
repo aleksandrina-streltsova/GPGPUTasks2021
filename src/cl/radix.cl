@@ -150,6 +150,7 @@ __kernel void scan_last(__global const int *as,
             local_as[local_id] = 0;
         }
         local_prefix_sum[local_id] = 0;
+        barrier(CLK_LOCAL_MEM_FENCE);
 
         if (local_id == 0) {
             local_prefix_sum[0] = local_as[0];
@@ -157,6 +158,7 @@ __kernel void scan_last(__global const int *as,
                 local_prefix_sum[i] = local_prefix_sum[i - 1] + local_as[i];
             }
         }
+        barrier(CLK_LOCAL_MEM_FENCE);
         if (id < n) {
             prefix_sum[id] = local_prefix_sum[local_id];
         }
